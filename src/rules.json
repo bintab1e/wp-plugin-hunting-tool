@@ -1,95 +1,74 @@
 {
   "rules": [
     {
-      "id": "sqli1",
+      "id": "poc_sqli_concat_exec_1",
       "category": "SQLi",
       "enabled": true,
-      "input_pattern": "\\$_(?:GET|POST|COOKIE)\\s*\\[[^\\]]+\\]|wp_unslash\\s*\\(\\s*\\$_(?:GET|POST|COOKIE)",
-      "output_pattern": "\\$wpdb->(?:query|get_var|get_row|get_col|get_results|prepare)\\s*\\("
+      "input_pattern": "\\$([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(?:sanitize_text_field|sanitize_key|sanitize_textarea_field|wp_unslash)?\\s*\\(?\\s*\\$_(?:GET|POST|REQUEST|COOKIE)\\s*\\[[^\\]]+\\]\\s*\\)?",
+      "output_pattern": "\\$wpdb->(?:query|get_results|get_row|get_var|get_col)\\s*\\(\\s*(?!\\$wpdb->prepare\\s*\\()(?:(?:\\\"[^\\\"\\n]*(?:SELECT|INSERT|UPDATE|DELETE)[^\\\"\\n]*\\\"\\s*\\.\\s*\\$\\1)|(?:'[^'\\n]*(?:SELECT|INSERT|UPDATE|DELETE)[^'\\n]*'\\s*\\.\\s*\\$\\1)|(?:\\$\\1\\s*\\.\\s*\\\"[^\\\"\\n]*(?:SELECT|INSERT|UPDATE|DELETE)[^\\\"\\n]*\\\")|(?:\\$\\1\\s*\\.\\s*'[^'\\n]*(?:SELECT|INSERT|UPDATE|DELETE)[^'\\n]*'))"
     },
     {
-      "id": "sqli2",
+      "id": "poc_sqli_order_limit_1",
       "category": "SQLi",
       "enabled": true,
-      "input_pattern": "\\$(\\w+)\\s*=\\s*sanitize_text_field\\s*\\(\\s*wp_unslash\\s*\\(\\s*\\$_COOKIE\\s*\\[[^\\]]+\\]\\s*\\)\\s*\\)",
-      "output_pattern": "ORDER\\s+BY[^;]*\\.\\s*\\$\\1|\\$wpdb->prepare\\s*\\([^;]*\\$\\1"
+      "input_pattern": "\\$([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*sanitize_text_field\\s*\\(\\s*(?:wp_unslash\\s*\\()?\\s*\\$_(?:GET|POST|REQUEST)\\s*\\[[^\\]]+\\]\\s*\\)?\\s*\\)",
+      "output_pattern": "\\$wpdb->(?:query|get_results|get_row|get_var|get_col)\\s*\\(\\s*(?!\\$wpdb->prepare\\s*\\()(?:(?:\\\"[^\\\"\\n]*(?:ORDER\\s+BY|LIMIT)[^\\\"\\n]*\\\"\\s*\\.\\s*\\$\\1)|(?:'[^'\\n]*(?:ORDER\\s+BY|LIMIT)[^'\\n]*'\\s*\\.\\s*\\$\\1)|(?:\\$\\1\\s*\\.\\s*\\\"[^\\\"\\n]*(?:ORDER\\s+BY|LIMIT)[^\\\"\\n]*\\\")|(?:\\$\\1\\s*\\.\\s*'[^'\\n]*(?:ORDER\\s+BY|LIMIT)[^'\\n]*'))"
     },
     {
-      "id": "lfi1",
+      "id": "poc_lfi_template_param_1",
       "category": "LFI",
       "enabled": true,
-      "input_pattern": "\\$(\\w+)\\s*=\\s*urldecode\\s*\\(\\s*\\$_(?:GET|POST|REQUEST)\\s*\\[[^\\]]+\\]",
-      "output_pattern": "(?:include|require)(?:_once)?\\s+\\$\\1\\s*;"
+      "input_pattern": "(?:wp_ajax_nopriv_[A-Za-z0-9_]+|register_rest_route)[^\\n]{0,220}(?:template|file|path|include|instawp-database-manager)",
+      "output_pattern": "(?:include|require)(?:_once)?\\s*\\(\\s*(?!(?:realpath|basename|sanitize_file_name|wp_normalize_path)\\s*\\()\\$[A-Za-z_][A-Za-z0-9_]*"
     },
     {
-      "id": "xss1",
-      "category": "XSS",
-      "enabled": true,
-      "input_pattern": "\\$_(?:GET|POST|REQUEST)\\s*\\[[^\\]]+\\]|\\$_SERVER\\s*\\[\\s*[\"']PHP_SELF[\"']\\s*\\]",
-      "output_pattern": "echo\\s+(?:add_query_arg|remove_query_arg)\\s*\\("
-    },
-    {
-      "id": "xss2",
-      "category": "XSS",
-      "enabled": true,
-      "input_pattern": "\\$(\\w+)\\s*=\\s*\\$_GET\\s*\\[[^\\]]+\\]",
-      "output_pattern": "printf\\s*\\([^;]*\\$\\1\\s*\\)"
-    },
-    {
-      "id": "xss3",
-      "category": "XSS",
-      "enabled": true,
-      "input_pattern": "\\$(\\w+)\\s*=\\s*sanitize_text_field\\s*\\(\\s*(?:\\$_GET|\\$_REQUEST|\\$_POST)\\s*\\[(?:'|\\\")[^'\\\"]+(?:'|\\\")\\]\\s*\\)",
-      "output_pattern": "<input[^>]*value=[\"']<\\?php\\s+echo\\s+\\$\\1"
-    },
-    {
-      "id": "open_redirect1",
+      "id": "poc_open_redirect_1",
       "category": "OpenRedirect",
       "enabled": true,
-      "input_pattern": "\\$(\\w+)\\s*=\\s*(?:urldecode\\s*\\()?\\s*\\$_(?:GET|POST|REQUEST)\\s*\\[[\"'](?:url|redirect|next|target|return|redirect_to)[\"']\\]\\s*\\)?",
-      "output_pattern": "wp_redirect\\s*\\(\\s*\\$\\1\\s*\\)|header\\s*\\(\\s*[\"']Location\\s*:\\s*[\"']\\s*\\.\\s*\\$\\1\\s*\\)"
+      "input_pattern": "\\$([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(?:sanitize_text_field|wp_unslash)?\\s*\\(?\\s*\\$_(?:GET|POST|REQUEST)\\s*\\[[\\\"'](?:redirect|redirect_to|url|next|target|return)[\\\"']\\]\\s*\\)?",
+      "output_pattern": "\\bwp_redirect\\s*\\(\\s*(?!(?:wp_validate_redirect|wp_safe_redirect|esc_url_raw)\\s*\\()\\$\\1\\s*\\)"
     },
     {
-      "id": "content_injection1",
-      "category": "ContentInjection",
+      "id": "poc_afu_ajax_upload_1",
+      "category": "ArbitraryFileUpload",
       "enabled": true,
-      "input_pattern": "\\$_(?:POST|REQUEST)\\s*\\[[\"\\']id[\"\\']\\]",
-      "output_pattern": "do_shortcode\\s*\\(\\s*[\"\\'][^\"\\']*\\.\\s*\\$_(?:POST|REQUEST)\\s*\\[[^\\]]+\\]\\s*\\.[^\"\\']*[\"\\']\\s*\\)"
+      "input_pattern": "(?:wp_ajax_nopriv_[A-Za-z0-9_]*upload|action\\s*=\\s*['\\\"][A-Za-z0-9_]*upload[A-Za-z0-9_]*['\\\"])[^\\n]{0,220}\\$_FILES",
+      "output_pattern": "(?:move_uploaded_file|wp_handle_upload|media_handle_upload)\\s*\\([^\\n;]{0,220}(?!(?:wp_check_filetype_and_ext|sanitize_file_name|current_user_can)\\s*\\()"
     },
     {
-      "id": "content_injection2",
-      "category": "ContentInjection",
+      "id": "poc_rce_callable_from_input_1",
+      "category": "RCE",
       "enabled": true,
-      "input_pattern": "\\$_(?:POST|REQUEST)\\s*\\[[^\\]]+\\]",
-      "output_pattern": "echo\\s+[\"\\'][^\"\\']*\\.?\\s*wp_kses_post\\s*\\(\\s*\\$_(?:POST|REQUEST)\\s*\\[[^\\]]+\\]\\s*\\)"
+      "input_pattern": "\\$([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(?:sanitize_text_field|wp_unslash)?\\s*\\(?\\s*\\$_(?:GET|POST|REQUEST|COOKIE)\\s*\\[[^\\]]+\\]\\s*\\)?",
+      "output_pattern": "(?:call_user_func_array|call_user_func)\\s*\\(\\s*\\$\\1"
     },
     {
-      "id": "file_read1",
+      "id": "poc_auth_bypass_admin_create_1",
+      "category": "AuthBypass",
+      "enabled": true,
+      "input_pattern": "(?:st_authorization|secret_key|authenticate_user|autheticate_user|permission_callback\\s*=>\\s*['\\\"]__return_true['\\\"])",
+      "output_pattern": "(?:wp_insert_user|wp_create_user|set_role\\s*\\(\\s*['\\\"]administrator['\\\"]|add_user_to_blog)"
+    },
+    {
+      "id": "poc_xss_echo_unescaped_1",
+      "category": "XSS",
+      "enabled": true,
+      "input_pattern": "\\$([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(?:wp_unslash\\s*\\()?\\s*\\$_(?:GET|POST|REQUEST|COOKIE|SERVER)\\s*\\[[^\\]]+\\]\\s*\\)?",
+      "output_pattern": "\\b(?:echo|print|printf|die|wp_die)\\b[^\\n;]{0,120}(?!(?:esc_html|esc_attr|esc_url|wp_kses)\\s*\\()\\$\\1"
+    },
+    {
+      "id": "poc_afr_unsafe_read_1",
       "category": "ArbitraryFileRead",
       "enabled": true,
-      "input_pattern": "\\$_(?:GET|POST|REQUEST)\\s*\\[[^\\]]+\\]",
-      "output_pattern": "(?:file_get_contents|readfile|fopen|fread|fgets|fgetcsv|file)\\s*\\(|\\$wp_filesystem->(?:get_contents|get_contents_array)\\s*\\("
+      "input_pattern": "\\$([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(?:sanitize_text_field|wp_unslash)?\\s*\\(?\\s*\\$_(?:GET|POST|REQUEST)\\s*\\[[^\\]]+\\]\\s*\\)?",
+      "output_pattern": "(?:file_get_contents|readfile|fopen)\\s*\\(\\s*(?!(?:realpath|basename|sanitize_file_name|wp_normalize_path)\\s*\\()\\$\\1"
     },
     {
-      "id": "file_upload1",
-      "category": "ArbitraryFileUpload",
+      "id": "poc_content_injection_rest_1",
+      "category": "ContentInjection",
       "enabled": true,
-      "input_pattern": "\\$_FILES\\b|get_file_params\\s*\\(",
-      "output_pattern": "(?:move_uploaded_file|wp_handle_upload|file_put_contents|fwrite|fputs|copy|rename)\\s*\\(|(?:ZipArchive|PharData)\\s*.*?->\\s*extractTo\\s*\\(|unzip_file\\s*\\("
-    },
-    {
-      "id": "file_upload2",
-      "category": "ArbitraryFileUpload",
-      "enabled": true,
-      "input_pattern": "wp_handle_upload\\s*\\(\\s*\\$_FILES\\s*\\[[^\\]]+\\]",
-      "output_pattern": "['\\\"]test_type['\\\"]\\s*=>\\s*false"
-    },
-    {
-      "id": "rfi1",
-      "category": "RFI",
-      "enabled": true,
-      "input_pattern": "\\$_(?:GET|POST|REQUEST)\\s*\\[[^\\]]+\\]|\\$(\\w+)\\s*=\\s*\\$_(?:GET|POST|REQUEST)\\s*\\[[^\\]]+\\]",
-      "output_pattern": "(?:include|require)(?:_once)?\\s*\\(\\s*(?:\\$(?:\\w+)|[\\\"'][^\\\"']*(?:https?:|ftp:|php:|data:)//[^\\\"']*[\\\"'])"
+      "input_pattern": "register_rest_route\\s*\\([^\\n;]{0,500}permission_callback\\s*=>\\s*(?:'__return_true'|\\\"__return_true\\\")",
+      "output_pattern": "(?:wp_update_post|wp_insert_post|update_post_meta)\\s*\\([^\\n;]{0,260}(?:\\$_(?:POST|REQUEST)|\\$request->get_param)"
     }
   ]
 }
