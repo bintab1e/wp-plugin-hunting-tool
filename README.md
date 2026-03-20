@@ -10,5 +10,5 @@ python init_findings_db.py
 python downloader.py
 python scanner.py
 ```
-scanner.py 실행 후 터미널에 노출된 예상 취약 코드(규칙 매칭 결과)를 확인하고, 해당 플러그인 코드를 수동으로 분석\n
-원하는 규칙만 스캔하려면 rules.json에서 불필요한 rule의 enabled 값을 false로 변경
+- scanner.py 실행 후 터미널에 노출된 예상 취약 코드(규칙 매칭 결과)를 확인하고, 해당 플러그인 코드를 수동으로 분석
+- 원하는 규칙만 스캔하려면 rules.json에서 불필요한 rule의 enabled 값을 false로 변경
